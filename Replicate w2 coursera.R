@@ -1,0 +1,56 @@
+setwd("C:/Users/U6065449/Downloads/nuevo")
+
+activityDT <- data.table::fread(input = "./activity.csv")
+
+Total_Steps <- activityDT[, c(lapply(.SD, sum, na.rm = TRUE)), .SDcols = c("steps"), by = .(date)] 
+
+head(Total_Steps,10)
+
+library(ggplot2)
+
+png("hist1.png",width = 480,height = 480)
+
+ggplot(Total_Steps,aes(x=steps))+
+  geom_histogram(fill="blue",binwidth = 1000)+
+  labs(title = "daily steps",x="steps",y="Frecuency")
+
+dev.off()
+Total_Steps[, .(Mean_Steps = mean(steps), Median_Steps = median(steps))]
+
+IntervalDT <- activityDT[, c(lapply(.SD, mean, na.rm = TRUE)), .SDcols = c("steps"), by = .(interval)] 
+
+ggplot(IntervalDT, aes(x = interval , y = steps)) +
+  geom_line(color="blue", size=1) +
+  labs(title = "Avg. Daily Steps", x = "Interval", y = "Avg. Steps per day")
+
+IntervalDT[steps == max(steps), .(max_interval = interval)]
+
+activityDT[is.na(steps), .N ]
+
+nrow(activityDT[is.na(steps),])
+
+activityDT[is.na(steps), "steps"] <- round(activityDT[, c(lapply(.SD, mean, na.rm = TRUE)), .SDcols = c("steps")])
+
+data.table::fwrite(x = activityDT, file = "./activity.csv", quote = FALSE)
+
+
+
+Total_Steps <- activityDT[, c(lapply(.SD, sum, na.rm = TRUE)), .SDcols = c("steps"), by = .(date)] 
+
+Total_Steps[, .(Mean_Steps = mean(steps), Median_Steps = median(steps))]
+
+
+library(ggplot2)
+ggplot(Total_Steps, aes(x = steps)) +
+  geom_histogram(fill = "blue", binwidth = 1000) +
+  labs(title = "Daily Steps", x = "Steps", y = "Frequency")
+
+activityDT[, dateTime := as.POSIXct(date, format = "%Y-%m-%d")]
+activityDT[, `Day of Week`:= weekdays(x = dateTime)]
+
+activityDT[grepl(pattern = "Monday|Tuesday|Wednesday|Thursday|Friday", x = `Day of Week`), "weekday or weekend"] <- "weekday"
+activityDT[grepl(pattern = "Saturday|Sunday", x = `Day of Week`), "weekday or weekend"] <- "weekend"
+activityDT[, `weekday or weekend` := as.factor(`weekday or weekend`)]
+
+
+
